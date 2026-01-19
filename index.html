@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>線上訂購</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+  <meta property="og:title" content="<?= shopName ?>">
+  <meta property="og:description" content="<?= announcement ?>">
+  <meta property="og:image" content="https://i.meee.com.tw/ySOxImO.png">
+  <meta property="og:type" content="website">
+
+  <style>
+    /* ========== 🎨 網站配色與變數設定區 ========== */
+    /* 若要改顏色，請修改這裡的色碼 */
+    :root {
+      --bg-color: #faf7f2;       /* 整體背景色 (米色) */
+      --card-bg: #ffffff;        /* 卡片背景色 (白) */
+      --text-main: #5a4a42;      /* 主要文字顏色 (深褐) */
+      --text-sub: #8b7355;       /* 次要文字顏色 (淺褐) */
+      --accent: #c9a67a;         /* ✨ 強調色/按鈕顏色 (金褐) */
+      --btn-text: #ffffff;       /* 按鈕文字顏色 */
+      --border-radius: 12px;     /* 圓角程度 */
+      --pattern: none;
+      --error-color: #e74c3c;    /* 錯誤提示色 (紅) */
+    }
+
+    /* 金屬風格主題 (若 body class="theme-metal" 則套用此配色) */
+    body.theme-metal { 
+      --bg-color: #fef9f7; 
+      --card-bg: #ffffff; 
+      --text-main: #393332; 
+      --text-sub: #555555; 
+      --accent: #dd5434; 
+      --btn-text: #000000; 
+      --border-radius: 0px; 
+    }
+
+    body { 
+      font-family: 'Noto Sans TC', sans-serif; 
+      background-color: var(--bg-color); 
+      background-image: var(--pattern); 
+      background-size: 40px 40px; 
+      color: var(--text-main); 
+      margin: 0; 
+      padding: 20px; 
+      min-height: 100vh; 
+      display: flex; 
+      justify-content: center; 
+      padding-bottom: 100px; 
+    }
+
+    .container { width: 100%; max-width: 500px; }
+
+    .header { text-align: center; margin-bottom: 30px; padding: 20px 0; border-bottom: 2px solid var(--accent); }
+    
+    /* Logo 樣式設定 */
+    .brand-logo {
+      width: 130px;
+      height: 130px;
+      object-fit: cover;
+      border-radius: 50%;
+      padding: 0px;
+      background: #ffffff;
+      border: 2px solid var(--accent);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+      display: inline-block;
+    }
+
+    .header h1 { margin: 0; font-size: 26px; }
+    .header p { color: var(--text-sub); margin-top: 10px; white-space: pre-wrap; }
+
+    /* IG 連結按鈕樣式 */
+    .ig-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 15px;
+      padding: 6px 16px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 50px;
+      text-decoration: none;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 500;
+      transition: 0.2s;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .ig-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+    .ig-icon { width: 16px; height: 16px; }
+
+    #closedMsg { display: none; color: var(--error-color); font-weight: bold; font-size: 20px; text-align: center; margin: 30px 0; padding: 10px 0; border: 2px dashed var(--error-color); border-radius: 8px; }
+
+    /* ========== 產品卡片 ========== */
+    .product-list { display: flex; flex-direction: column; gap: 15px; }
+    
+    .product-card { 
+      background: var(--card-bg); 
+      padding: 15px; 
+      border-radius: var(--border-radius); 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      border: 1px solid transparent; 
+      transition: 0.2s; 
+      text-align: center; 
+    }
+    .product-card:hover { border-color: var(--accent); }
+
+    .product-img { width: 100%; max-width: 250px; height: auto; border-radius: 12px; object-fit: cover; margin-bottom: 12px; }
+    
+    .product-info h3 { margin: 0 0 5px 0; font-size: 16px; font-weight: bold; } 
+    .product-info p { margin: 0; font-size: 12px; color: var(--text-sub); }
+    .product-price { font-weight: bold; color: var(--accent); margin-top: 5px; font-size: 16px; }
+
+    .sold-out-badge { margin-top: 10px; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: bold; color: white; background: #999; }
+    .product-card.sold-out { opacity: 0.6; }
+    .stock-warning { font-size: 12px; color: red; margin-top: 5px; display: none; }
+
+    /* ========== Skeleton 骨架屏動畫 (載入中效果) ========== */
+    .skeleton {
+      background: #f0f0f0;
+      background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
+      background-size: 200% 100%;
+      animation: 1.5s shine linear infinite;
+      border-radius: 8px;
+    }
+    @keyframes shine { to { background-position-x: -200%; } }
+    
+    .skeleton-card {
+      padding: 15px; background: #fff; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .skeleton-img { width: 250px; height: 180px; max-width: 100%; }
+    .skeleton-text { width: 60%; height: 20px; }
+    .skeleton-price { width: 30%; height: 20px; margin-top: 5px; }
+
+    /* ========== Toast 樣式 (下方黑框通知) ========== */
+    #toast {
+      visibility: hidden;
+      min-width: auto;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      text-align: center;
+      border-radius: 50px;
+      padding: 10px 24px;
+      position: fixed;
+      z-index: 9999;
+      left: 50%;
+      bottom: 90px;
+      transform: translateX(-50%);
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.3s, bottom 0.3s;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      backdrop-filter: blur(6px);
+      white-space: nowrap;
+    }
+    #toast.show {
+      visibility: visible;
+      opacity: 1;
+      bottom: 100px;
+    }
+
+    /* ========== 加購專區樣式 ========== */
+    .addon-list { display: flex; flex-direction: column; gap: 10px; }
+    .addon-card { 
+      display: flex; align-items: center; 
+      background: #fff; 
+      padding: 10px 15px; 
+      border-radius: 8px; border: 1px solid #eee; 
+    }
+    .addon-info { flex: 1; display: flex; flex-direction: column; text-align: left; }
+    .addon-name { font-size: 15px; font-weight: 500; color: var(--text-main); }
+    .addon-price { font-size: 14px; color: var(--text-sub); }
+
+    .section-divider {
+      border: 0;
+      border-top: 2px dashed var(--accent);
+      opacity: 0.3;
+      margin: 30px 0;
+    }
+
+    /* ========== 按鈕與數量控制器 ========== */
+    .add-to-cart-btn {
+      margin-top: 5px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 5px 20px;
+      border-radius: 50px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .addon-card .add-to-cart-btn { margin-top: 0; padding: 4px 15px; font-size: 13px; }
+
+    .qty-control { display: none; align-items: center; gap: 10px; margin-top: 10px; }
+    .addon-card .qty-control { margin-top: 0; }
+
+    .qty-btn { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; user-select: none; }
+    .qty-display { min-width: 20px; text-align: center; font-weight: bold; }
+
+    /* ========== 表單區塊設計 ========== */
+    .checkout-form { margin-top: 0; padding: 0; background: transparent; box-shadow: none; }
+    
+    .form-section {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+
+    .form-section-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--text-main);
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .form-group { margin-bottom: 15px; position: relative; }
+    .form-group label { display: block; font-size: 14px; margin-bottom: 5px; color: var(--text-sub); }
+    
+    .form-group input, .form-group select { 
+      width: 100%; 
+      padding: 10px; 
+      border: 1px solid #ddd; 
+      border-radius: 6px; 
+      box-sizing: border-box; 
+      font-size: 16px; 
+      background: #fff; 
+      transition: all 0.3s ease;
+    }
+    
+    .form-group input:focus, .form-group select:focus { 
+      border-color: var(--accent); 
+      outline: none; 
+      box-shadow: 0 0 0 3px rgba(201, 166, 122, 0.25);
+    }
+    
+    .form-group.error input { border-color: red; background: #fff5f5; }
+    .error-msg { color: red; font-size: 12px; margin-top: 4px; display: none; }
+    .form-group.error .error-msg { display: block; }
+
+    /* 錯誤震動動畫 */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    .shake { animation: shake 0.3s ease-in-out; }
+
+    .hidden { display: none; }
+
+    /* 物流選項 Radio 樣式 */
+    .radio-group { display: flex; flex-direction: column; gap: 10px; }
+    .radio-item { display: flex; align-items: center; padding: 15px; border: 1px solid #ddd; border-radius: 12px; cursor: pointer; background: white; transition: 0.2s; }
+    .radio-item.selected { border-color: var(--accent); background: rgba(221, 84, 52, 0.05); box-shadow: 0 0 0 1px var(--accent); }
+    .radio-item input[type="radio"] { width: 20px; height: 20px; margin-right: 12px; accent-color: var(--accent); }
+    .radio-text { flex: 1; display: flex; flex-direction: column; text-align: left; line-height: 1.4; }
+    .radio-price { font-weight: bold; color: var(--text-main); white-space: nowrap; margin-left: auto; text-align: right; }
+
+    .store-finder { display: inline-block; margin-top: 5px; font-size: 13px; color: var(--accent); text-decoration: none; border: 1px solid var(--accent); padding: 4px 10px; border-radius: 20px; transition: 0.2s; cursor: pointer; }
+    .store-finder:hover { background: var(--accent); color: white; }
+
+    #cartListDisplay::-webkit-scrollbar { width: 4px; }
+    #cartListDisplay::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+    #cartListDisplay::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+
+    .form-note { 
+      margin-bottom: 20px; 
+      padding: 20px; 
+      background: var(--card-bg); 
+      border-radius: var(--border-radius);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      font-size: 15px; 
+      color: var(--text-sub); 
+      line-height: 1.6; 
+    }
+    
+    .highlight-red { color: red; font-weight: bold; }
+
+    /* 底部固定欄 */
+    .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 15px 20px; box-shadow: 0 -4px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 100; max-width: 500px; margin: 0 auto; }
+    
+    .total-price { font-size: 20px; font-weight: bold; color: var(--accent); }
+    
+    .submit-btn { background: var(--accent); color: var(--btn-text); border: none; padding: 12px 30px; border-radius: 50px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .clear-cart-btn {
+      background: transparent;
+      border: 1px solid #ddd;
+      color: #888;
+      border-radius: 20px;
+      padding: 2px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      display: none; 
+      align-items: center;
+      gap: 4px;
+      transition: 0.2s;
+    }
+    .clear-cart-btn:hover { background: #eee; color: #555; }
+
+    /* 載入轉圈圈 */
+    .loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 999; }
+    .spinner { border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid #fff; border-radius: 50%; width: 40px; height: 40px; margin-bottom: 10px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* 彈窗共用樣式 */
+    .popup-overlay {
+        display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.6); z-index: 9999;
+        justify-content: center; align-items: center;
+        backdrop-filter: blur(2px);
+    }
+    .popup-content {
+        background: white; padding: 25px; border-radius: 12px;
+        text-align: center; width: 80%; max-width: 300px;
+        font-size: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        animation: popIn 0.2s ease-out;
+    }
+    @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    @media (min-width: 768px) {
+      .product-info h3 { font-size: 20px !important; margin-bottom: 8px; }
+      .product-info p { font-size: 15px !important; margin-bottom: 10px; }
+      .product-price { font-size: 18px !important; }
+      #cartListDisplay { font-size: 14px !important; max-height: 100px; }
+      .total-price { font-size: 24px !important; }
+      .container, .bottom-bar { max-width: 550px !important; }
+      .form-group label { font-size: 15px !important; margin-bottom: 6px; }
+      .radio-text, .radio-price { font-size: 15px !important; }
+    }
+  </style>
+</head>
+
+<body class="<?= theme ?>">
+  <div class="container">
+    <div class="header">
+      <img src="https://i.meee.com.tw/osUMMbm.png" alt="品牌 Logo" class="brand-logo">
+      
+      <h1><?= shopName ?></h1>
+      
+      <a href="https://www.instagram.com/moodri_patisserie" target="_blank" class="ig-btn">
+        <svg class="ig-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+           <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+           <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+           <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+        </svg>
+        追蹤我們
+      </a>
+
+      <p><?= announcement ?></p>
+    </div>
+
+    <div id="closedMsg">暫時停止下單，敬請期待</div>
+
+    <div id="productArea" class="product-list">
+      <div class="skeleton-card">
+        <div class="skeleton skeleton-img"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-price"></div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton skeleton-img"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-price"></div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton skeleton-img"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-price"></div>
+      </div>
+    </div>
+
+    <div id="addonSection" style="display:none; margin-top: 30px;">
+      <h3 style="font-size: 18px; border-left: 4px solid var(--text-sub); padding-left: 10px; margin-bottom: 15px;">🛍️ 加購區</h3>
+      <div id="addonArea" class="addon-list"></div>
+    </div>
+
+    <hr class="section-divider">
+
+    <form id="orderForm" class="checkout-form" novalidate>
+      <h3 style="margin-top:0; margin-bottom:20px; text-align:center; font-size: 20px; color: var(--text-main);"><?= formTitle ?></h3>
+
+      <? if (formNote) { ?>
+        <div class="form-note" id="formNote"><?!= formNote ?></div>
+      <? } ?>
+
+      <div class="form-section">
+        <div class="form-section-title">👤 訂購人資料</div>
+        
+        <div class="form-group" id="field-name">
+          <label>您的姓名 *</label>
+          <input type="text" name="customerName" required placeholder="請輸入姓名">
+          <div class="error-msg">請輸入姓名</div>
+        </div>
+
+        <div class="form-group" id="field-phone">
+          <label>聯絡電話 *</label>
+          <input type="tel" name="customerPhone" required placeholder="請輸入電話" maxlength="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+          <div class="error-msg">請輸入有效的手機號碼</div>
+        </div>
+
+        <div class="form-group" id="field-email">
+          <label>電子信箱 （寄送訂單確認信） *</label>
+          <input type="email" name="customerEmail" required placeholder="example@gmail.com">
+          <div class="error-msg">Email 格式不正確</div>
+        </div>
+
+        <div class="form-group">
+          <label>社群 ID 帳號（IG）</label>
+          <input type="text" name="socialId" placeholder="方便私訊確認 (選填)">
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">🚚 配送資訊</div>
+        
+        <div class="form-group" id="field-pickup">
+          <label>取貨/物流方式 *</label>
+          <div id="logisticsArea" class="radio-group"></div>
+          <div class="error-msg">請選擇取貨方式</div>
+        </div>
+
+        <div class="form-group hidden" id="addressField">
+          <label>寄送地址 *</label>
+          <input type="text" name="address" placeholder="請輸入完整地址 (含郵遞區號)">
+          <div class="error-msg">請輸入地址</div>
+        </div>
+
+        <div class="hidden" id="storeField">
+          <div class="form-group">
+            <label>門市店名 (例如：廣福店) *</label>
+            <input type="text" name="storeName" placeholder="請輸入門市名稱">
+          </div>
+          <div class="form-group">
+            <label>門市店號 (數字) *</label>
+            <input type="text" name="storeCode" placeholder="請輸入店號" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+          </div>
+          <div style="margin-bottom: 15px; text-align: right;">
+            <span style="font-size: 12px; color: #666;">不知道店號？</span>
+            <a href="https://emap.pcsc.com.tw/" target="_blank" class="store-finder" id="btn711">🔍 查 7-11</a>
+            <a href="https://www.family.com.tw/marketing/inquiry.aspx" target="_blank" class="store-finder" id="btnFamily">🔍 查全家</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-section-title">💰 付款資訊</div>
+        
+        <div class="form-group" id="field-bank">
+           <label>匯款帳號後五碼 *</label>
+           <input type="text" name="bankLast5" required maxlength="5" pattern="\d{5}" title="請輸入 5 位數字" placeholder="" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+           <div class="error-msg">請輸入5位數字</div>
+        </div>
+
+        <div class="form-group">
+             <label>備注</label>
+             <input type="text" name="note" >
+        </div>
+      </div>
+
+      <div style="height: 60px;"></div>
+    </form>
+  </div>
+
+  <div class="bottom-bar">
+    <div style="display:flex; flex-direction:column; flex: 1; margin-right: 15px;">
+      <div id="cartListDisplay" style="
+        font-size: 11px; 
+        color: var(--text-main); 
+        max-height: 55px; 
+        overflow-y: auto; 
+        margin-bottom: 5px; 
+        border-left: 3px solid var(--accent); 
+        padding-left: 8px;
+        line-height: 1.5;
+      ">
+        <div style="color: var(--text-sub);">尚未選擇品項</div>
+      </div>
+      
+      <div style="display: flex; gap: 10px; align-items:center; font-size:12px; color:var(--text-sub); margin-bottom: 2px;">
+        <span>已選: <b id="countDisplay" style="color:var(--text-main);">0</b> 件</span>
+        <button id="clearCartBtn" class="clear-cart-btn" onclick="showClearCartConfirm()">🗑️ 清空</button>
+        <span style="margin-left:auto;">運費: <b id="shippingDisplay" style="color:var(--text-main);">$0</b></span>
+      </div>
+      <div class="total-price">總計: $<span id="totalDisplay">0</span></div>
+    </div>
+    
+    <button class="submit-btn" id="submitBtn" onclick="trySubmit()" disabled>
+      送出訂單
+    </button>
+  </div>
+
+  <div id="successPopup" class="popup-overlay">
+    <div class="popup-content">
+      <div id="popupIcon" style="font-size: 40px; margin-bottom: 10px;">🎉</div>
+      <h3 id="popupTitle" style="margin: 0 0 10px 0;">訂購成功</h3>
+      <div id="successMsg" style="color: #666; font-size: 14px; line-height: 1.6;"></div>
+      <button onclick="closePopup('successPopup')" style="margin-top:20px; padding:8px 20px; border:none; background:var(--accent); color:white; border-radius:6px; font-size:14px;">確定</button>
+    </div>
+  </div>
+
+  <div id="confirmPopup" class="popup-overlay">
+    <div class="popup-content">
+      <h3 style="margin-top:0; color:var(--text-main);">🗑️ 確定要清空購物車嗎？</h3>
+      <p style="color:var(--text-sub); font-size:14px;">所有已選商品將會被移除。</p>
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
+        <button onclick="closePopup('confirmPopup')" style="padding:8px 20px; border:1px solid #ddd; background:white; color:#666; border-radius:6px; cursor:pointer;">取消</button>
+        <button onclick="performClearCart()" style="padding:8px 20px; border:none; background:var(--accent); color:white; border-radius:6px; cursor:pointer;">確定清空</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast">🛒 購物車已更新</div>
+
+  <div class="loading-overlay" id="loading">
+    <div class="spinner"></div>
+    <div id="loadingText">處理中...</div>
+  </div>
+
+
+  <script>
+    let cart = {};
+    let productsData = [];
+    let logisticsData = [];
+    let isOpen = false;
+    let toastTimeout;
+
+    function showSuccessPopup(msg, title='訂購成功', type='success') {
+      document.getElementById('successMsg').innerHTML = msg;
+      document.getElementById('popupTitle').innerText = title;
+      document.getElementById('popupIcon').innerText = type === 'success' ? '🎉' : '❌';
+      document.getElementById('successPopup').style.display = 'flex';
+    }
+
+    function closePopup(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.innerText = msg;
+      toast.className = "show";
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 2500);
+    }
+
+    window.onload = function() {
+      if (history.scrollRestoration) {
+        history.scrollRestoration = 'manual';
+      }
+      window.scrollTo(0, 0);
+
+      google.script.run.withSuccessHandler(renderProducts).getProductList();
+      google.script.run.withSuccessHandler(renderLogistics).getLogisticsOptions();
+      google.script.run.withSuccessHandler(setOrderStatus).getOrderStatus();
+
+      const noteDiv = document.getElementById("formNote");
+      if(noteDiv) {
+        // ✨ 文字替換邏輯：若要增加其他紅字提示，可參考此段程式碼
+        noteDiv.innerHTML = noteDiv.innerHTML.replace(
+        "請兩天內",
+        '<span class="highlight-red">請兩天內</span>'
+        );
+      }
+    };
+
+    function setOrderStatus(status){
+      const orderForm = document.getElementById('orderForm');
+      const closedMsg = document.getElementById('closedMsg');
+
+      if(status === 'open'){
+        isOpen = true;
+        orderForm.style.display = 'block';
+        closedMsg.style.display = 'none';
+      } else {
+        isOpen = false;
+        orderForm.style.display = 'none';
+        closedMsg.style.display = 'block';
+      }
+      renderProducts(productsData);
+    }
+
+    function renderProducts(products){
+      productsData = products;
+      const mainContainer = document.getElementById('productArea');
+      const addonContainer = document.getElementById('addonArea');
+      const addonSection = document.getElementById('addonSection');
+
+      if(!products || products.length === 0){
+        mainContainer.innerHTML = '<div style="text-align:center;">目前沒有上架的產品</div>';
+        return;
+      }
+
+      let mainHtml = '';
+      let addonHtml = '';
+      let hasAddon = false;
+
+      const keywords = ['提袋', '紙袋', '蠟燭', '盤叉', '保冷'];
+
+      products.forEach((p, idx)=>{
+        const stock = Number(p.stock) || 0;
+        const isSoldOut = stock <= 0 || p.soldOut === true;
+        const showControl = isOpen && !isSoldOut;
+
+        const isAddon = keywords.some(k => p.name.includes(k));
+
+        let controlHtml = '';
+        if (showControl) {
+          controlHtml = `
+            <button id="btn-add-${idx}" class="add-to-cart-btn" onclick="updateCart('${p.name}', ${p.price}, 1, ${stock}, ${idx})">＋ 加入</button>
+            <div id="btn-group-${idx}" class="qty-control">
+                <button class="qty-btn" onclick="updateCart('${p.name}', ${p.price}, -1, ${stock}, ${idx})">-</button>
+                <span id="qty-${idx}" class="qty-display">0</span>
+                <button class="qty-btn" onclick="updateCart('${p.name}', ${p.price}, 1, ${stock}, ${idx})">+</button>
+            </div>
+          `;
+        } else if (isSoldOut) {
+          controlHtml = `<div class="sold-out-badge">已售完</div>`;
+        }
+
+        if (isAddon) {
+          hasAddon = true;
+          addonHtml += `
+            <div class="addon-card ${isSoldOut ? 'sold-out' : ''}">
+              <div class="addon-info">
+                <div class="addon-name">${p.name}</div>
+                <div class="addon-price">$${p.price}</div>
+                ${isSoldOut ? '<span style="font-size:11px; color:#999;">(已售完)</span>' : ''}
+              </div>
+              ${controlHtml}
+            </div>
+          `;
+        } else {
+          // 加入 lazy loading
+          let imgHtml = p.img ? `<img src="${p.img}" class="product-img" loading="lazy" onerror="this.remove()">` : "";
+          
+          mainHtml += `
+            <div class="product-card ${isSoldOut ? 'sold-out' : ''}" id="p-card-${idx}">
+              ${imgHtml}
+              <div style="flex:1;">
+                <div class="product-info">
+                  <h3>${p.name}</h3>
+                  <div style="font-size:12px; color:var(--text-sub);">${p.desc}</div>
+                  <div class="product-price">$${p.price}</div>
+                  <div class="stock-warning" id="stock-warn-${idx}">庫存緊張剩 ${stock}</div>
+                </div>
+              </div>
+              ${controlHtml}
+            </div>
+          `;
+        }
+      });
+
+      mainContainer.innerHTML = mainHtml;
+      
+      if(hasAddon){
+        addonSection.style.display = 'block';
+        addonContainer.innerHTML = addonHtml;
+      } else {
+        addonSection.style.display = 'none';
+      }
+    }
+
+    function renderLogistics(options){
+      logisticsData = options;
+      const container = document.getElementById('logisticsArea');
+      let html = '';
+
+      options.forEach((opt, idx)=>{
+        let priceText = opt.price === 0 ? "免費" : `$${opt.price}`;
+        let freeText = opt.freeThreshold < 99999 ? `<span style="font-size:12px; color:var(--accent); margin-top:2px;">(滿$${opt.freeThreshold}免運)</span>` : '';
+        html += `<label class="radio-item" onclick="selectLogistics(${idx}, this)">
+          <input type="radio" name="pickupMethod" value="${opt.name}" required>
+          <div class="radio-text"><span style="font-weight:500;">${opt.name}</span>${freeText}</div>
+          <div class="radio-price">${priceText}</div>
+        </label>`;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function selectLogistics(idx, element){
+      document.querySelectorAll('.radio-item').forEach(el=>el.classList.remove('selected'));
+      element.classList.add('selected');
+      element.querySelector('input').checked = true;
+
+      const opt = logisticsData[idx];
+      const addressField = document.getElementById('addressField');
+      const storeField = document.getElementById('storeField');
+      const name = opt.name;
+
+      addressField.querySelector('input').required = false;
+      storeField.querySelector('input[name="storeName"]').required = false;
+      storeField.querySelector('input[name="storeCode"]').required = false;
+      addressField.classList.add('hidden');
+      storeField.classList.add('hidden');
+
+      if(name.includes("店到店") || name.includes("超商") || name.includes("全家") || name.includes("7-11")){
+        storeField.classList.remove('hidden');
+        storeField.querySelector('input[name="storeName"]').required = true;
+        storeField.querySelector('input[name="storeCode"]').required = true;
+        document.getElementById('btn711').style.display = name.includes("全家") ? "none" : "inline-block";
+        document.getElementById('btnFamily').style.display = name.includes("7-11") ? "none" : "inline-block";
+      } else if(opt.price>0 || name.includes("宅配") || name.includes("寄送") || name.includes("郵寄")){
+        addressField.classList.remove('hidden');
+        addressField.querySelector('input').required = true;
+      }
+
+      calculateTotal();
+      document.getElementById('field-pickup').classList.remove('error');
+    }
+
+    function updateCart(name, price, delta, maxStock, idx){
+      if(!cart[name]) cart[name] = { price: price, qty: 0 };
+      
+      let newQty = cart[name].qty + delta;
+      
+      if(newQty < 0) newQty = 0;
+      if(newQty > maxStock) {
+        newQty = maxStock;
+        const warn = document.getElementById(`stock-warn-${idx}`);
+        if(warn) {
+           warn.style.display = 'block';
+           setTimeout(()=> warn.style.display = 'none', 2000);
+        }
+      }
+
+      cart[name].qty = newQty;
+      
+      const qtyDisplay = document.getElementById(`qty-${idx}`);
+      if(qtyDisplay) qtyDisplay.innerText = newQty;
+
+      const btnAdd = document.getElementById(`btn-add-${idx}`);
+      const btnGroup = document.getElementById(`btn-group-${idx}`);
+
+      if(btnAdd && btnGroup){
+        if(newQty > 0){
+          btnAdd.style.display = 'none';
+          btnGroup.style.display = 'flex';
+        } else {
+          btnAdd.style.display = 'inline-block';
+          btnGroup.style.display = 'none';
+        }
+      }
+
+      calculateTotal();
+      showToast('🛒 購物車已更新');
+    }
+
+    function showClearCartConfirm() {
+      document.getElementById('confirmPopup').style.display = 'flex';
+    }
+
+    function performClearCart() {
+      cart = {};
+      
+      productsData.forEach((p, idx) => {
+         const btnAdd = document.getElementById(`btn-add-${idx}`);
+         const btnGroup = document.getElementById(`btn-group-${idx}`);
+         const qtyDisplay = document.getElementById(`qty-${idx}`);
+         
+         if(btnAdd && btnGroup) {
+            btnAdd.style.display = 'inline-block';
+            btnGroup.style.display = 'none';
+            qtyDisplay.innerText = '0';
+         }
+      });
+      
+      calculateTotal();
+      closePopup('confirmPopup');
+      showToast('🗑️ 購物車已清空');
+    }
+
+    function calculateTotal(){
+      let productTotal = 0, totalCount = 0, hasItem = false;
+      let listHtml = ""; 
+
+      for(let key in cart){
+        if(cart[key].qty > 0) {
+          productTotal += cart[key].price * cart[key].qty;
+          totalCount += cart[key].qty;
+          hasItem = true;
+          
+          listHtml += `<div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; padding: 2px 0;">
+                        <span>• ${key}</span>
+                        <span style="font-weight:bold; color:var(--accent);">x${cart[key].qty}</span>
+                      </div>`;
+        }
+      }
+
+      let shippingFee = 0;
+      const selectedRadio = document.querySelector('input[name="pickupMethod"]:checked');
+      if(selectedRadio){
+        const opt = logisticsData.find(o => o.name === selectedRadio.value);
+        if(opt) shippingFee = (productTotal >= opt.freeThreshold) ? 0 : opt.price;
+      }
+
+      const listEl = document.getElementById('cartListDisplay');
+      if(hasItem) {
+        listEl.innerHTML = listHtml;
+        listEl.scrollTop = listEl.scrollHeight;
+      } else {
+        listEl.innerHTML = '<div style="color: var(--text-sub);">尚未選擇品項</div>';
+      }
+
+      document.getElementById('countDisplay').innerText = totalCount;
+      document.getElementById('shippingDisplay').innerText = shippingFee === 0 ? "免運" : `$${shippingFee}`;
+      
+      document.getElementById('totalDisplay').innerText = productTotal + shippingFee;
+
+      const clearBtn = document.getElementById('clearCartBtn');
+      if(clearBtn) clearBtn.style.display = hasItem ? 'flex' : 'none';
+
+      document.getElementById('submitBtn').disabled = !hasItem;
+    }
+
+    function trySubmit() {
+      document.querySelectorAll('.form-group').forEach(el => el.classList.remove('error'));
+      document.querySelectorAll('.form-group').forEach(el => el.classList.remove('shake'));
+      
+      const form = document.getElementById('orderForm');
+      const formData = new FormData(form);
+      let firstError = null;
+
+      if(!formData.get('customerName').trim()) {
+        showError('field-name'); if(!firstError) firstError = 'field-name';
+      }
+      const phone = formData.get('customerPhone').trim();
+      if(!/^09\d{8}$/.test(phone)) {
+        showError('field-phone'); if(!firstError) firstError = 'field-phone';
+      }
+      const email = formData.get('customerEmail').trim();
+      if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showError('field-email'); if(!firstError) firstError = 'field-email';
+      }
+      const method = formData.get('pickupMethod');
+      if(!method) {
+        showError('field-pickup'); if(!firstError) firstError = 'field-pickup';
+      } else {
+        const storeName = formData.get('storeName');
+        const storeCode = formData.get('storeCode');
+        const address = formData.get('address');
+        if(!document.getElementById('storeField').classList.contains('hidden')){
+           if(!storeName || !storeCode) {
+             alert('請完整填寫超商門市名稱與店號');
+             if(!firstError) firstError = 'storeField';
+           }
+        }
+        if(!document.getElementById('addressField').classList.contains('hidden')){
+           if(!address) {
+              document.getElementById('addressField').classList.add('error');
+              document.getElementById('addressField').classList.add('shake');
+              if(!firstError) firstError = 'addressField';
+           }
+        }
+      }
+      const bank5 = formData.get('bankLast5').trim();
+      if(!/^\d{5}$/.test(bank5)) {
+        showError('field-bank'); if(!firstError) firstError = 'field-bank';
+      }
+
+      if(firstError) {
+        document.getElementById(firstError).scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      submitOrderData(formData, method);
+    }
+
+    function showError(id) {
+      const el = document.getElementById(id);
+      if(el) {
+        el.classList.add('error');
+        el.classList.add('shake');
+      }
+    }
+
+    function submitOrderData(formData, method) {
+      const btn = document.getElementById('submitBtn');
+      const loading = document.getElementById('loading');
+      
+      btn.disabled = true;
+      btn.innerText = "處理中...";
+      loading.style.display = 'flex';
+
+      let cartItems = [];
+      for(let key in cart){
+        if(cart[key].qty > 0){
+          cartItems.push({
+            name: key,
+            qty: cart[key].qty,
+            price: cart[key].price
+          });
+        }
+      }
+
+      let finalAddress = formData.get('address');
+      const storeName = formData.get('storeName');
+      const storeCode = formData.get('storeCode');
+      
+      if(storeName && storeCode){
+        finalAddress = `[${method}] ${storeCode} ${storeName}`;
+      } else if(!finalAddress && !method.includes("面交")){
+        finalAddress = method;
+      }
+
+      const orderObj = {
+        shopName: document.querySelector('.header h1').innerText,
+        customerName: formData.get('customerName'),
+        customerPhone: formData.get('customerPhone'),
+        customerEmail: formData.get('customerEmail'),
+        socialId: formData.get('socialId'),
+        pickupMethod: method,
+        address: finalAddress || "",
+        bankLast5: formData.get('bankLast5'),
+        cartData: JSON.stringify(cartItems),
+        totalAmount: Number(document.getElementById('totalDisplay').innerText),
+        note: formData.get('note')
+      };
+
+      google.script.run
+        .withSuccessHandler(function(res){
+          loading.style.display = 'none';
+          btn.innerText = "送出訂單";
+          if(res.status === 'success'){
+            showSuccessPopup(
+              `🎉 訂購成功！<br>訂單編號：<b>${res.orderId}</b><br>確認信已寄出。`,
+              '訂購成功', 'success'
+            );
+            
+            document.getElementById('orderForm').reset();
+            cart = {};
+            document.querySelectorAll('span[id^="qty-"]').forEach(el=>el.innerText='0');
+            document.querySelectorAll('[id^="btn-add-"]').forEach(el=>el.style.display='inline-block');
+            document.querySelectorAll('[id^="btn-group-"]').forEach(el=>el.style.display='none');
+            document.querySelectorAll('.radio-item').forEach(el=>el.classList.remove('selected'));
+            document.getElementById('addressField').classList.add('hidden');
+            document.getElementById('storeField').classList.add('hidden');
+            calculateTotal();
+          } else {
+            showSuccessPopup('錯誤：' + res.message, '下單失敗', 'error');
+            btn.disabled = false;
+          }
+        })
+        .withFailureHandler(function(){
+          loading.style.display = 'none';
+          showSuccessPopup('無法連接到伺服器，請檢查網路。', '連線錯誤', 'error');
+          btn.disabled = false;
+        })
+        .submitOrder(orderObj);
+    }
+  </script>
+</body>
+</html>
